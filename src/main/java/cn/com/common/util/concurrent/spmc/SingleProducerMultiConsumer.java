@@ -5,10 +5,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * 单生产者多消费者组件<br/>
@@ -16,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * 1、创建该类的实例<br/>
  * 2、设置生产者实例、消费者实例<br/>
  * 3、设置线程池大小、队列大小（必须是2的幂次方）、队列等待策略、<br/>
- * 内部自动拉取数据、自动拉取数据间隔时间（毫秒）；该过程非必选可跳过<br/>
+ * 内部自动拉取数据、自动拉取数据间隔时间（毫秒）、多消费者之间消费同步；该过程非必选可跳过<br/>
  * 4、启动<br/>
  * 5、外部定时触发拉取数据；当内部自动拉取数据时，该过程非必选可跳过<br/>
  * 6、停止；该过程非必选<br/>
@@ -47,13 +44,14 @@ public class SingleProducerMultiConsumer {
     private WaitStrategy waitStrategy;
     private boolean autoFetchData = true;
     private int interval = 10;
+    private boolean sync = true;
     private ExecutorService executor;
     private Disruptor<DataHolder> disruptor;
     private RingBuffer<DataHolder> ringBuffer;
     private WaitStrategy BLOCKING_WAIT = new BlockingWaitStrategy();
     private WaitStrategy SLEEPING_WAIT = new SleepingWaitStrategy();
     private WaitStrategy YIELDING_WAIT = new YieldingWaitStrategy();
-    private boolean run;
+    private volatile boolean run;
 
     /**
      * 设置生产者实例<br/>
@@ -125,19 +123,34 @@ public class SingleProducerMultiConsumer {
     }
 
     /**
+     * 设置多消费者之间消费同步<br/>
+     *
+     * @param sync
+     */
+    public void setSync(boolean sync) {
+        this.sync = sync;
+    }
+
+    /**
      * 启动<br/>
      */
     public void start() {
         if (null == waitStrategy) {
             this.waitStrategy = YIELDING_WAIT;
         }
-        executor = new ThreadPoolExecutor(threadCount, threadCount,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(threadCount));
+        executor = Executors.newCachedThreadPool();
         disruptor = new Disruptor<DataHolder>(new DataHolderFactory(),
                 ringBufferSize, executor, ProducerType.SINGLE,
                 waitStrategy);
-        disruptor.handleEventsWith(new DataConsumerProxy(dataConsumer));
+        DataConsumerProxy[] dcps = new DataConsumerProxy[threadCount];
+        for (int i = 0; i < dcps.length; i++) {
+            dcps[i] = new DataConsumerProxy(dataConsumer);
+        }
+        if (sync && threadCount > 1) {
+            disruptor.handleEventsWithWorkerPool(dcps);
+        } else {
+            disruptor.handleEventsWith(dcps);
+        }
         disruptor.start();
         ringBuffer = disruptor.getRingBuffer();
         run = true;

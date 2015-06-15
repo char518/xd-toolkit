@@ -30,7 +30,7 @@ public class SingleProducerMultiConsumerTest {
 
     @Test
     public void testStart() throws Exception {
-        final AtomicInteger count = new AtomicInteger(0);
+        final AtomicInteger index = new AtomicInteger(0), count = new AtomicInteger(0);
         long st = System.currentTimeMillis();
         SingleProducerMultiConsumer spmc = new SingleProducerMultiConsumer();
         spmc.setDataProducer(new DataProducer() {
@@ -38,7 +38,7 @@ public class SingleProducerMultiConsumerTest {
                 List<Object> datas = new ArrayList<Object>();
                 Random r = new Random(System.currentTimeMillis());
                 for (int i = 0; i < 10000; i++) {
-                    datas.add(new int[]{r.nextInt(1000), r.nextInt(1000)});
+                    datas.add(new int[]{r.nextInt(1000), r.nextInt(1000), index.incrementAndGet()});
                 }
                 return datas;
             }
@@ -46,14 +46,17 @@ public class SingleProducerMultiConsumerTest {
         spmc.setDataConsumer(new DataConsumer() {
             public void handleData(Object data) {
                 int[] arr = (int[]) data;
-                System.out.println(count.incrementAndGet() + "\t" + Thread.currentThread().getName() + ", " + arr[0] + " + " + arr[1] + " = " + (arr[0] + arr[1]));
+                String s = (arr[2] + "\t" + Thread.currentThread().getName() + ", " + arr[0] + " + " + arr[1] + " = " + (arr[0] + arr[1]));
+                //System.out.println(s);
+                count.incrementAndGet();
             }
         });
-        spmc.setThreadCount(16);
-        spmc.setRingBufferSize(1024);
-        spmc.setWaitStrategy(SingleProducerMultiConsumer.WAIT_STRATEGY_YIELDING);
-        spmc.setAutoFetchData(true);
-        spmc.setInterval(1);
+        //spmc.setThreadCount(16);
+        //spmc.setRingBufferSize(1024);
+        //spmc.setWaitStrategy(SingleProducerMultiConsumer.WAIT_STRATEGY_YIELDING);
+        //spmc.setAutoFetchData(true);
+        //spmc.setInterval(10);
+        //spmc.setSync(false);
         spmc.start();
         try {
             Thread.sleep(10 * 1000);
@@ -65,6 +68,7 @@ public class SingleProducerMultiConsumerTest {
         } catch (Exception e) {
         }
         long et = System.currentTimeMillis();
+        System.out.println(index.get() + ", " + index.get() * 2);
         System.out.println("handle count " + count.get() + ", used time " + (et - st));
     }
 }

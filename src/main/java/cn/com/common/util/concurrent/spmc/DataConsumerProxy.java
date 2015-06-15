@@ -1,6 +1,7 @@
 package cn.com.common.util.concurrent.spmc;
 
 import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.WorkHandler;
 
 /**
  * 数据消费者代理<br/>
@@ -8,7 +9,7 @@ import com.lmax.disruptor.EventHandler;
  *
  * @author wuliwei
  */
-final class DataConsumerProxy implements DataConsumer, EventHandler<DataHolder> {
+final class DataConsumerProxy implements DataConsumer, EventHandler<DataHolder>, WorkHandler<DataHolder> {
     private DataConsumer dataConsumer;
 
     public DataConsumerProxy(DataConsumer dataConsumer) {
@@ -19,9 +20,13 @@ final class DataConsumerProxy implements DataConsumer, EventHandler<DataHolder> 
         this.dataConsumer.handleData(data);
     }
 
-    public void onEvent(DataHolder dataHolder, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(DataHolder dataHolder) throws Exception {
         if (null != dataHolder && null != dataHolder.getData()) {
             handleData(dataHolder.getData());
         }
+    }
+
+    public void onEvent(DataHolder dataHolder, long sequence, boolean endOfBatch) throws Exception {
+        onEvent(dataHolder);
     }
 }
