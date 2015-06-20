@@ -14,6 +14,59 @@ public class QueuingProxyTest {
     private static int handleUsedTime;
     private static long st;
 
+    public static void handle() {
+        try {
+            Thread.sleep(handleUsedTime * 1000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static int handle(Integer p1) {
+        handle();
+        return p1;
+    }
+
+    private static List<Integer> handle(int p1, List<Integer> p2) {
+        handle();
+        p2.add(p1);
+        return p2;
+    }
+
+    public static String handle(Integer p1, List<Integer> p2, List<String> p3) {
+        handle();
+        p2.add(p1);
+        return "" + p2.size() + "," + p3.size();
+    }
+
+    private static void echo(String result, int ap, int ql, Throwable t,
+                             Object r) {
+        System.out.println("["
+                + (System.currentTimeMillis() - st)
+                / 1000
+                + "]"
+                + Thread.currentThread().getName()
+                + " acquire "
+                + result
+                + ", available permits is "
+                + ap
+                + ", queue size is "
+                + ql
+                + (null == r ? "" : ", return type is " + r.getClass()
+                + " and value is " + r));
+        if (null != t) {
+            t.printStackTrace();
+        }
+    }
+
+    private static void sleep() {
+        try {
+            Thread.sleep(10 * 1000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @Before
     public void setUp() throws Exception {
 
@@ -172,58 +225,5 @@ public class QueuingProxyTest {
         System.out.println("休眠10秒");
         System.out.println("第6号线程已执行60秒，执行完，释放1个信号量，剩余2个信号量");
         sleep();
-    }
-
-    public static void handle() {
-        try {
-            Thread.sleep(handleUsedTime * 1000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static int handle(Integer p1) {
-        handle();
-        return p1;
-    }
-
-    private static List<Integer> handle(int p1, List<Integer> p2) {
-        handle();
-        p2.add(p1);
-        return p2;
-    }
-
-    public static String handle(Integer p1, List<Integer> p2, List<String> p3) {
-        handle();
-        p2.add(p1);
-        return "" + p2.size() + "," + p3.size();
-    }
-
-    private static void echo(String result, int ap, int ql, Throwable t,
-                             Object r) {
-        System.out.println("["
-                + (System.currentTimeMillis() - st)
-                / 1000
-                + "]"
-                + Thread.currentThread().getName()
-                + " acquire "
-                + result
-                + ", available permits is "
-                + ap
-                + ", queue size is "
-                + ql
-                + (null == r ? "" : ", return type is " + r.getClass()
-                + " and value is " + r));
-        if (null != t) {
-            t.printStackTrace();
-        }
-    }
-
-    private static void sleep() {
-        try {
-            Thread.sleep(10 * 1000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

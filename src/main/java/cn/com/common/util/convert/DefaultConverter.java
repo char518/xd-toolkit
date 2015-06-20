@@ -16,6 +16,42 @@ public class DefaultConverter {
     protected Map<Class<?>, Class<?>> classesMap = new HashMap<Class<?>, Class<?>>();
     protected Class<?> arrayDestClass = null;
 
+    public static Class<?> getParameterType(Method m, int index) {
+        Class<?>[] cs = m.getParameterTypes();
+        if (null == cs || cs.length == 0) {
+            return null;
+        }
+        return cs[index];
+    }
+
+    public static Class<?>[] getComponentType(Method m, int index) {
+        Class<?>[] cs = m.getParameterTypes();
+        if (null == cs || cs.length == 0) {
+            return null;
+        }
+        Class<?> pt = cs[index];
+        if (pt.isArray()) {
+            return new Class<?>[]{pt.getComponentType()};
+        } else if (Collection.class.isAssignableFrom(pt)
+                || Map.class.isAssignableFrom(pt)) {
+            Type[] ts = m.getGenericParameterTypes();
+            Type temp = ts[index];
+            if (ParameterizedType.class.isAssignableFrom(temp.getClass())) {
+                ParameterizedType pit = (ParameterizedType) temp;
+                Type[] ats = pit.getActualTypeArguments();
+                if (null == ats || ats.length == 0) {
+                    return null;
+                }
+                Class<?>[] cts = new Class<?>[ats.length];
+                for (int i = 0; i < ats.length; i++) {
+                    cts[i] = (Class<?>) ats[i];
+                }
+                return cts;
+            }
+        }
+        return null;
+    }
+
     /**
      * 注册类型映射关系<br />
      * 对于注册中的类型srcClass，将被统一转换成destClass <br />
@@ -721,42 +757,6 @@ public class DefaultConverter {
             name = name.toLowerCase();
         }
         return name;
-    }
-
-    public static Class<?> getParameterType(Method m, int index) {
-        Class<?>[] cs = m.getParameterTypes();
-        if (null == cs || cs.length == 0) {
-            return null;
-        }
-        return cs[index];
-    }
-
-    public static Class<?>[] getComponentType(Method m, int index) {
-        Class<?>[] cs = m.getParameterTypes();
-        if (null == cs || cs.length == 0) {
-            return null;
-        }
-        Class<?> pt = cs[index];
-        if (pt.isArray()) {
-            return new Class<?>[]{pt.getComponentType()};
-        } else if (Collection.class.isAssignableFrom(pt)
-                || Map.class.isAssignableFrom(pt)) {
-            Type[] ts = m.getGenericParameterTypes();
-            Type temp = ts[index];
-            if (ParameterizedType.class.isAssignableFrom(temp.getClass())) {
-                ParameterizedType pit = (ParameterizedType) temp;
-                Type[] ats = pit.getActualTypeArguments();
-                if (null == ats || ats.length == 0) {
-                    return null;
-                }
-                Class<?>[] cts = new Class<?>[ats.length];
-                for (int i = 0; i < ats.length; i++) {
-                    cts[i] = (Class<?>) ats[i];
-                }
-                return cts;
-            }
-        }
-        return null;
     }
 
 }

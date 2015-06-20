@@ -15,6 +15,20 @@ import java.util.Map.Entry;
  */
 public class DefaultConverterTest {
 
+    private static void convert(DefaultConverter dc,
+                                Entry<Class<?>, Object> etr1, Entry<Class<?>, Object> etr2) {
+        try {
+            Object dest = dc.convert(etr1.getValue(), etr2.getKey());
+            System.out.println(String.format("s %s = %s, d %s, %s = %s", etr1
+                            .getValue().getClass(), etr1.getValue(), etr2.getKey(),
+                    null != dest ? dest.getClass() : dest, dest));
+        } catch (Exception e) {
+            System.out.println(String.format("s %s = %s, d %s error ", etr1
+                    .getValue().getClass(), etr1.getValue(), etr2.getKey()));
+            e.printStackTrace();
+        }
+    }
+
     @Before
     public void setUp() throws Exception {
 
@@ -108,20 +122,6 @@ public class DefaultConverterTest {
         System.out.println("used time " + (e - s));
         s2 = new Gson().toJson(o);
         System.out.println(s1.equals(s2));
-    }
-
-    private static void convert(DefaultConverter dc,
-                                Entry<Class<?>, Object> etr1, Entry<Class<?>, Object> etr2) {
-        try {
-            Object dest = dc.convert(etr1.getValue(), etr2.getKey());
-            System.out.println(String.format("s %s = %s, d %s, %s = %s", etr1
-                            .getValue().getClass(), etr1.getValue(), etr2.getKey(),
-                    null != dest ? dest.getClass() : dest, dest));
-        } catch (Exception e) {
-            System.out.println(String.format("s %s = %s, d %s error ", etr1
-                    .getValue().getClass(), etr1.getValue(), etr2.getKey()));
-            e.printStackTrace();
-        }
     }
 
 }

@@ -1,5 +1,6 @@
-package cn.com.common.util.concurrent.spmc;
+package cn.com.common.util.concurrent.spmc.disruptor;
 
+import cn.com.common.util.concurrent.spmc.DataConsumer;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.WorkHandler;
 

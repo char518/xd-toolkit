@@ -1,4 +1,4 @@
-package cn.com.common.util.concurrent.spmc;
+package cn.com.common.util.concurrent.spmc.disruptor;
 
 import com.lmax.disruptor.EventFactory;
 

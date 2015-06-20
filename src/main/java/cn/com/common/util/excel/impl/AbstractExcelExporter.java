@@ -17,6 +17,13 @@ public abstract class AbstractExcelExporter implements ExcelExporter {
     protected int maxRowPerSheet = 50000;
     protected String charsetName = "UTF-8";
 
+    protected static void close(OutputStream pOs) throws IOException {
+        if (null == pOs) {
+            return;
+        }
+        pOs.close();
+    }
+
     /**
      * 设置每个工作表最大行数
      *
@@ -69,13 +76,6 @@ public abstract class AbstractExcelExporter implements ExcelExporter {
     protected void write(OutputStream pOs, String str) throws IOException {
         byte[] b = str.getBytes(charsetName);
         pOs.write(b, 0, b.length);
-    }
-
-    protected static void close(OutputStream pOs) throws IOException {
-        if (null == pOs) {
-            return;
-        }
-        pOs.close();
     }
 
 }

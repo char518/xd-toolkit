@@ -1,7 +1,5 @@
 package cn.com.common.util.concurrent.spmc;
 
-import java.util.List;
-
 /**
  * 数据生产者<br/>
  * Created by wuliwei on 2015/6/14.
@@ -17,5 +15,5 @@ public interface DataProducer {
      *
      * @return
      */
-    public List<Object> fetchData();
+    public Object[] fetchData();
 }

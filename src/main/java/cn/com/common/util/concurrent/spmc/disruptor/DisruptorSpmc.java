@@ -1,11 +1,13 @@
-package cn.com.common.util.concurrent.spmc;
+package cn.com.common.util.concurrent.spmc.disruptor;
 
+import cn.com.common.util.concurrent.spmc.DataConsumer;
+import cn.com.common.util.concurrent.spmc.DataProducer;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 
-import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 单生产者多消费者组件<br/>
@@ -21,7 +23,7 @@ import java.util.concurrent.*;
  *
  * @author wuliwei
  */
-public class SingleProducerMultiConsumer {
+public class DisruptorSpmc {
     /**
      * 最低效的队列等待策略，但其对CPU的消耗最小并且在各种不同部署环境中能提供更加一致的性能表现
      */
@@ -39,11 +41,11 @@ public class SingleProducerMultiConsumer {
 
     private DataProducer dataProducer;
     private DataConsumer dataConsumer;
-    private int threadCount = 16;
-    private int ringBufferSize = 1024;
+    private int threadCount = 4;
+    private int ringBufferSize = 128;
     private WaitStrategy waitStrategy;
     private boolean autoFetchData = true;
-    private int interval = 10;
+    private int interval = 0;
     private boolean sync = true;
     private ExecutorService executor;
     private Disruptor<DataHolder> disruptor;
@@ -159,7 +161,11 @@ public class SingleProducerMultiConsumer {
                 public void run() {
                     while (run) {
                         try {
-                            Thread.sleep(interval);
+                            if (interval > 0) {
+                                Thread.sleep(interval);
+                            } else {
+                                Thread.yield();
+                            }
                             fetchData();
                         } catch (Exception e) {
                         }
@@ -180,11 +186,11 @@ public class SingleProducerMultiConsumer {
     }
 
     /**
-     * 触发拉取数据
+     * 触发拉取数据<br/>
      */
     public void fetchData() {
         try {
-            List<Object> datas = dataProducer.fetchData();
+            Object[] datas = dataProducer.fetchData();
             if (null != datas) {
                 for (Object data : datas) {
                     publish(data);
@@ -195,7 +201,7 @@ public class SingleProducerMultiConsumer {
     }
 
     /**
-     * 发布数据
+     * 发布数据<br/>
      *
      * @param data
      */

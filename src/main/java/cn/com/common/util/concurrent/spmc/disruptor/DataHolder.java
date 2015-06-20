@@ -1,4 +1,4 @@
-package cn.com.common.util.concurrent.spmc;
+package cn.com.common.util.concurrent.spmc.disruptor;
 
 /**
  * 数据持有者<br/>
