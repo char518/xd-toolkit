@@ -27,7 +27,8 @@ public class OriginalSpmc {
     private int consumerCount = 4;
     private int bufferSize = 128;
     private boolean autoFetchData = true;
-    private int interval = 0;
+    private int fetchDataInterval = 10;
+    private int interval = 1;
     private DataProducerProcessor[] dataProducerProcessors;
     private DataConsumerProcessor[] dataConsumerProcessors;
     private ExecutorService executorService;
@@ -87,7 +88,16 @@ public class OriginalSpmc {
     }
 
     /**
-     * 设置内部自动拉取数据间隔时间（毫秒）<br/>
+     * 设置内部自动拉取数据的时间间隔（毫秒）<br/>
+     *
+     * @param fetchDataInterval
+     */
+    public void setFetchDataInterval(int fetchDataInterval) {
+        this.fetchDataInterval = fetchDataInterval;
+    }
+
+    /**
+     * 设置内部缓冲区空闲时等待数据的时间间隔（毫秒）<br/>
      *
      * @param interval
      */
@@ -99,12 +109,16 @@ public class OriginalSpmc {
      * 启动<br/>
      */
     public void start() {
+        if (null == dataProducer) {
+            autoFetchData = false;
+        }
         executorService = Executors.newCachedThreadPool();
         BufferQueue bufferQueue = new DefaultBufferQueue(producerCount, consumerCount, bufferSize);
         dataProducerProcessors = new DataProducerProcessor[producerCount];
         for (int i = 0; i < producerCount; i++) {
             dataProducerProcessors[i] = new DataProducerProcessor(dataProducer, i, bufferQueue);
             dataProducerProcessors[i].setAutoFetchData(autoFetchData);
+            dataProducerProcessors[i].setFetchDataInterval(fetchDataInterval);
             dataProducerProcessors[i].setInterval(interval);
             if (autoFetchData) {
                 executorService.execute(dataProducerProcessors[i]);
@@ -114,6 +128,7 @@ public class OriginalSpmc {
         for (int i = 0; i < consumerCount; i++) {
             dataConsumerProcessors[i] = new DataConsumerProcessor(dataConsumer, i, bufferQueue);
             executorService.execute(dataConsumerProcessors[i]);
+            dataConsumerProcessors[i].setInterval(interval);
         }
     }
 
@@ -139,16 +154,27 @@ public class OriginalSpmc {
     }
 
     /**
-     * 触发拉取数据<br/>
+     * 外部触发拉取数据<br/>
      */
     public void fetchData() {
-        try {
-            for (int i = 0; i < producerCount; i++) {
-                if (!autoFetchData) {
-                    executorService.execute(dataProducerProcessors[i]);
-                }
+        for (int i = 0; i < producerCount; i++) {
+            if (!autoFetchData && null != dataProducer) {
+                executorService.execute(dataProducerProcessors[i]);
             }
-        } catch (Exception e) {
         }
+    }
+
+    /**
+     * 外部以指定的生产者的角色主动推送数据<br/>
+     *
+     * @param producerIndex 指定的生产者
+     * @param datas         数据
+     * @return 数据被处理则返回true，否则返回false
+     */
+    public boolean pushData(int producerIndex, Object[] datas) {
+        if (null == dataProducer) {
+            return dataProducerProcessors[producerIndex].pushData(datas);
+        }
+        return false;
     }
 }

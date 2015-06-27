@@ -16,6 +16,7 @@ class DataConsumerProcessor implements DataConsumer, Runnable {
     private BufferQueue bufferQueue;
     private int producerCount;
     private int bufferSize;
+    private int interval = 1;
     private int dataCount;
     private int curProducerIndex;
     private int curBufferIndex;
@@ -34,6 +35,10 @@ class DataConsumerProcessor implements DataConsumer, Runnable {
         datas = new Object[bufferSize];
     }
 
+    public void setInterval(int interval) {
+        this.interval = interval;
+    }
+
     public void handleData(Object data) {
         dataConsumer.handleData(data);
     }
@@ -47,7 +52,7 @@ class DataConsumerProcessor implements DataConsumer, Runnable {
             sleep = true;
             process();
             if (sleep) {
-                sleep();
+                sleep(interval);
             }
         }
         run.set(false);
@@ -97,13 +102,17 @@ class DataConsumerProcessor implements DataConsumer, Runnable {
                     // 确保无执行任务
                     return;
                 }
-                sleep();
+                sleep(interval);
             }
         }
     }
 
-    private void sleep() {
+    private void sleep(int millis) {
         try {
+            if (millis > 0) {
+                Thread.sleep(millis);
+                return;
+            }
             Thread.yield();
         } catch (Exception e) {
         }

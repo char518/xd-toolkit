@@ -17,7 +17,8 @@ class DataProducerProcessor implements DataProducer, Runnable {
     private int consumerCount;
     private int bufferSize;
     private boolean autoFetchData = true;
-    private int interval = 0;
+    private int fetchDataInterval = 10;
+    private int interval = 1;
     private Object[] datas;
     private int totalCount;
     private int dataCount;
@@ -40,6 +41,10 @@ class DataProducerProcessor implements DataProducer, Runnable {
         this.autoFetchData = autoFetchData;
     }
 
+    public void setFetchDataInterval(int fetchDataInterval) {
+        this.fetchDataInterval = fetchDataInterval;
+    }
+
     public void setInterval(int interval) {
         this.interval = interval;
     }
@@ -55,23 +60,45 @@ class DataProducerProcessor implements DataProducer, Runnable {
         return datas;
     }
 
+    public boolean pushData(Object[] datas) {
+        this.datas = datas;
+        totalCount = datas.length;
+        dataCount = 0;
+        return runProxy(true);
+    }
+
     public void run() {
+        runProxy(false);
+    }
+
+    public boolean runProxy(boolean isPushData) {
         // 同时只允许一个线程执行
         if (!run.compareAndSet(false, true)) {
-            return;
+            return false;
         }
-        while (!stop.get()) {
-            sleep = true;
-            process();
-            if (!autoFetchData) {
-                break;
+        if (autoFetchData) {
+            // 内部自动拉取数据，则内部一直循环拉取
+            while (!stop.get()) {
+                sleep = true;
+                fetchData();
+                process();
+                if (sleep) {
+                    // 当从外部拉取数据的数据为空是，休眠后继续拉取
+                    sleep(fetchDataInterval);
+                }
             }
-            if (sleep) {
-                // 从外部拉取数据休眠
-                sleep(interval);
+        } else if (!stop.get()) {
+            if (isPushData) {
+                // 外部主动推送数据
+                process();
+            } else {
+                // 外部触发一次性拉取数据
+                fetchData();
+                process();
             }
         }
         run.set(false);
+        return true;
     }
 
     public void stop(boolean force) {
@@ -81,7 +108,6 @@ class DataProducerProcessor implements DataProducer, Runnable {
     }
 
     private void process() {
-        fetchData();
         while (dataCount < totalCount) {
             sleep = true;
             curConsumerIndex = curConsumerIndex % consumerCount;
@@ -97,8 +123,11 @@ class DataProducerProcessor implements DataProducer, Runnable {
                 }
             }
             if (sleep) {
+                if (forceStop.get()) {
+                    return;
+                }
                 // 向队列填充数据休眠
-                sleep(0);
+                sleep(interval);
             }
         }
     }
@@ -114,15 +143,15 @@ class DataProducerProcessor implements DataProducer, Runnable {
                     bufferQueue.endBuffer(producerIndex);
                     return;
                 }
-                sleep(0);
+                sleep(interval);
             }
         }
     }
 
-    private void sleep(long time) {
+    private void sleep(int millis) {
         try {
-            if (time > 0) {
-                Thread.sleep(time);
+            if (millis > 0) {
+                Thread.sleep(millis);
                 return;
             }
             Thread.yield();
