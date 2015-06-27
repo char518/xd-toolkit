@@ -1,6 +1,26 @@
 # xd-toolkit
 工具集（工作过程中常用到的工具类、工具模块）
 
+## SPMC并发组件（同时也支持MPMC模式）
+    应用场景：
+    a、很多业务场景都是单生产者多消费者的模式，这个模式除了生产者的业务逻辑与消费者的业务逻辑
+    不一样外，其他的其实都是通用的，这个组件就是为了这个场景而存在，避免重造轮子
+    b、对于业务逻辑简单，要求高并发高响应的场景，改组件同样适用，经测试，在同等条件下，
+    吞吐率比Disruptor快10倍以上
+### 工具类
+    cn.com.common.util.concurrent.spmc.original.OriginalSpmc
+### 测试类（可作为使用示例参考）
+    cn.com.common.util.concurrent.spmc.original.OriginalSpmcTest
+
+## LMAX Disruptor并发框架封装
+    应用场景：
+    a、原框架使用起来比较繁杂，其实很多时候我们只关心生产者的业务逻辑和消费者的业务逻辑，
+    我们并不想了解太多的关于Disruptor的类，我这个封装的组件的意义就在这，简化开发
+### 工具类
+    cn.com.common.util.concurrent.spmc.disruptor.DisruptorSpmc
+### 测试类（可作为使用示例参考）
+    cn.com.common.util.concurrent.spmc.disruptor.DisruptorSpmcTest
+
 ## 并发排队等待
     应用场景：
     a、队列人数已达到最大限制数，屏蔽新访问用户加入队列；<br/>
